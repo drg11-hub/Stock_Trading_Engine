@@ -6,6 +6,13 @@
 #include <chrono>
 #include <mutex>
 
+/*
+ * Order class represents a stock market order (Buy or Sell).
+ * It contains essential attributes such as order type, ticker symbol,
+ * quantity of shares, price per share, and a unique order ID.
+ * This class is used as the fundamental unit of stock transactions.
+ */
+
 class Order {
 public:
     // "Buy" or "Sell"
@@ -19,6 +26,12 @@ public:
         : order_type(type), ticker(tick), quantity(qty), price(prc), order_id(id) {}
 };
 
+/*
+ * Node class serves as an element of the priority queue.
+ * Each node holds an order and a pointer to the next node,
+ * forming a linked list-based priority queue.
+ */
+
 class Node {
 public:
     Order order;
@@ -26,6 +39,15 @@ public:
 
     Node(Order ord) : order(ord), next(nullptr) {}
 };
+
+/*
+ * PriorityQueue implements a sorted linked list acting as a priority queue.
+ * It maintains orders in a sorted fashion based on price priority.
+ * - Buy orders are stored in a max-heap fashion (higher price = higher priority).
+ * - Sell orders are stored in a min-heap fashion (lower price = higher priority).
+ * This structure allows O(n) insertion but ensures the highest-priority order
+ * is accessible in O(1) time.
+ */
 
 class PriorityQueue {
 private:
@@ -68,6 +90,13 @@ public:
     }
 };
 
+/*
+ * OrderBook class manages stock transactions and order matching.
+ * - It maintains two priority queues per stock ticker (one for buy orders, one for sell orders).
+ * - Uses a lock-free approach with atomic spinlocks to handle concurrent access.
+ * - Orders are added to the respective queue and matched in real-time if conditions allow.
+ */
+
 class OrderBook {
 private:
     static constexpr int max_tickers = 1024;
@@ -95,6 +124,12 @@ public:
         
         match_order(ticker);
     }
+
+    /*
+     * Match buy and sell orders for a given ticker.
+     * - The best buy order is executed against the best sell order if the price conditions match.
+     * - If only part of the order can be fulfilled, the remaining shares are reinserted into the queue.
+     */
 
     void match_order(int ticker) {
         int index = ticker % max_tickers;
@@ -130,6 +165,12 @@ public:
 
 OrderBook order_book;
 
+/*
+ * Simulates real-time stock transactions with random orders.
+ * - Creates buy/sell orders with random prices and quantities.
+ * - Runs continuously with multiple threads to mimic real-world order flow.
+ */
+
 void simulate_market_activity(int iterations) {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -147,6 +188,12 @@ void simulate_market_activity(int iterations) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
+
+/*
+ * Main function launches multiple threads to simulate live trading.
+ * - Each thread processes 500 random stock orders.
+ * - Ensures concurrent access and execution of trades.
+ */
 
 int main() {
     std::vector<std::thread> threads;
